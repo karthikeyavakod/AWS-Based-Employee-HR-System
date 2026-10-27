@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class LeaveRequest extends Model
+{
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'employee_id',
+        'leave_type_id',
+        'start_date',
+        'end_date',
+        'total_days',
+        'reason',
+        'status',
+        'approved_by',
+        'approved_at',
+        'rejection_reason',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'total_days' => 'decimal:2',
+        'approved_at' => 'datetime',
+    ];
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+}

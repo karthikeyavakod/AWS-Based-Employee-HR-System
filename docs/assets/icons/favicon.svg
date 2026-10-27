@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">HRMS Laravel HR monogram</title>
+  <rect width="64" height="64" rx="14" fill="#0a1f26" />
+  <text
+    x="32"
+    y="40"
+    fill="#2dd4bf"
+    font-family="Segoe UI, Arial, sans-serif"
+    font-size="25"
+    font-weight="800"
+    letter-spacing="-1"
+    text-anchor="middle"
+  >HR</text>
+</svg>
