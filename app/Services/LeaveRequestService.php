@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\LeaveRequest;
 use Carbon\Carbon;
+use DomainException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -26,6 +27,7 @@ class LeaveRequestService
     public function update(LeaveRequest $leaveRequest, array $data): LeaveRequest
     {
         return DB::transaction(function () use ($leaveRequest, $data): LeaveRequest {
+            $this->ensurePending($leaveRequest);
             $payload = $this->prepareData($data);
 
             $this->fillTotalDays($payload, $leaveRequest);
@@ -39,12 +41,25 @@ class LeaveRequestService
 
     public function delete(LeaveRequest $leaveRequest): bool
     {
-        return DB::transaction(fn (): bool => (bool) $leaveRequest->delete());
+        return DB::transaction(function () use ($leaveRequest): bool {
+            if ($leaveRequest->status === 'approved') {
+                $this->restoreLeaveBalance($leaveRequest);
+            }
+
+            return (bool) $leaveRequest->delete();
+        });
     }
 
     public function approve(LeaveRequest $leaveRequest): LeaveRequest
     {
         return DB::transaction(function () use ($leaveRequest): LeaveRequest {
+            $this->ensurePending($leaveRequest);
+
+            if (auth()->id() !== null && $leaveRequest->employee?->user_id === auth()->id()) {
+                throw new DomainException('Employees cannot approve their own leave requests.');
+            }
+
+            $this->applyLeaveBalance($leaveRequest);
             $payload = [];
 
             if (Schema::hasColumn('leave_requests', 'status')) {
@@ -68,6 +83,7 @@ class LeaveRequestService
     public function reject(LeaveRequest $leaveRequest): LeaveRequest
     {
         return DB::transaction(function () use ($leaveRequest): LeaveRequest {
+            $this->ensurePending($leaveRequest);
             $payload = [];
 
             if (Schema::hasColumn('leave_requests', 'status')) {
@@ -108,7 +124,7 @@ class LeaveRequestService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function fillTotalDays(array &$payload, ?LeaveRequest $leaveRequest = null): void
     {
@@ -133,7 +149,7 @@ class LeaveRequestService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function ensureNoOverlap(array $payload, ?LeaveRequest $leaveRequest = null): void
     {
@@ -157,6 +173,10 @@ class LeaveRequestService
             ->where('employee_id', $employeeId)
             ->whereDate('start_date', '<=', $endDate)
             ->whereDate('end_date', '>=', $startDate)
+            ->when(
+                Schema::hasColumn('leave_requests', 'status'),
+                fn ($query) => $query->whereNotIn('status', ['rejected', 'cancelled']),
+            )
             ->when($leaveRequest !== null, fn ($query) => $query->whereKeyNot($leaveRequest->getKey()))
             ->exists();
 
@@ -168,7 +188,7 @@ class LeaveRequestService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function fillReviewColumns(array &$payload, string $action): void
     {
@@ -200,5 +220,114 @@ class LeaveRequestService
         if (Schema::hasColumn('leave_requests', 'reviewed_at')) {
             $payload['reviewed_at'] = $now;
         }
+    }
+
+    private function ensurePending(LeaveRequest $leaveRequest): void
+    {
+        if ($leaveRequest->status !== 'pending') {
+            throw new DomainException('Only pending leave requests can be reviewed or edited.');
+        }
+    }
+
+    private function applyLeaveBalance(LeaveRequest $leaveRequest): void
+    {
+        if (! Schema::hasTable('leave_balances') || ! Schema::hasTable('leave_types')) {
+            return;
+        }
+
+        foreach ($this->daysByYear($leaveRequest) as $year => $days) {
+            $balance = DB::table('leave_balances')
+                ->where('employee_id', $leaveRequest->employee_id)
+                ->where('leave_type_id', $leaveRequest->leave_type_id)
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if ($balance === null) {
+                $allocatedDays = (float) DB::table('leave_types')
+                    ->where('id', $leaveRequest->leave_type_id)
+                    ->value('default_days');
+
+                DB::table('leave_balances')->insert([
+                    'employee_id' => $leaveRequest->employee_id,
+                    'leave_type_id' => $leaveRequest->leave_type_id,
+                    'year' => $year,
+                    'allocated_days' => $allocatedDays,
+                    'used_days' => 0,
+                    'remaining_days' => $allocatedDays,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $balance = DB::table('leave_balances')
+                    ->where('employee_id', $leaveRequest->employee_id)
+                    ->where('leave_type_id', $leaveRequest->leave_type_id)
+                    ->where('year', $year)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            if ((float) $balance->remaining_days < $days) {
+                throw new DomainException("Insufficient leave balance for {$year}.");
+            }
+
+            DB::table('leave_balances')
+                ->where('id', $balance->id)
+                ->update([
+                    'used_days' => (float) $balance->used_days + $days,
+                    'remaining_days' => (float) $balance->remaining_days - $days,
+                    'updated_at' => now(),
+                ]);
+        }
+    }
+
+    private function restoreLeaveBalance(LeaveRequest $leaveRequest): void
+    {
+        if (! Schema::hasTable('leave_balances')) {
+            return;
+        }
+
+        foreach ($this->daysByYear($leaveRequest) as $year => $days) {
+            $balance = DB::table('leave_balances')
+                ->where('employee_id', $leaveRequest->employee_id)
+                ->where('leave_type_id', $leaveRequest->leave_type_id)
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if ($balance === null) {
+                continue;
+            }
+
+            DB::table('leave_balances')
+                ->where('id', $balance->id)
+                ->update([
+                    'used_days' => max(0, (float) $balance->used_days - $days),
+                    'remaining_days' => min(
+                        (float) $balance->allocated_days,
+                        (float) $balance->remaining_days + $days,
+                    ),
+                    'updated_at' => now(),
+                ]);
+        }
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function daysByYear(LeaveRequest $leaveRequest): array
+    {
+        $daysByYear = [];
+        $cursor = Carbon::parse($leaveRequest->start_date)->startOfDay();
+        $endDate = Carbon::parse($leaveRequest->end_date)->startOfDay();
+
+        while ($cursor->lte($endDate)) {
+            $yearEnd = $cursor->copy()->endOfYear();
+            $segmentEnd = $yearEnd->lt($endDate) ? $yearEnd : $endDate;
+            $daysByYear[$cursor->year] = (float) ($cursor->diffInDays($segmentEnd) + 1);
+            $cursor = $segmentEnd->copy()->addDay();
+        }
+
+        return $daysByYear;
     }
 }

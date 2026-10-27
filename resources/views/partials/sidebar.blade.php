@@ -11,6 +11,10 @@
         ['label' => 'Leave Management', 'permission' => 'leave.view', 'route' => 'admin.leaves.index', 'active' => 'admin.leaves.*', 'icon' => 'bi-calendar2-week'],
         ['label' => 'Payroll', 'permission' => 'payroll.view', 'route' => 'admin.payrolls.index', 'active' => 'admin.payrolls.*', 'icon' => 'bi-cash-stack'],
         ['label' => 'Reports', 'permission' => 'report.view', 'route' => 'admin.reports.index', 'active' => 'admin.reports.*', 'icon' => 'bi-bar-chart'],
+        ['label' => 'Announcements', 'permission' => 'announcement.view', 'route' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'bi-bell'],
+        ['label' => 'Audit Logs', 'permission' => 'audit.log.view', 'route' => 'admin.audit-logs.index', 'active' => 'admin.audit-logs.*', 'icon' => 'bi-journal-text'],
+        ['label' => 'Department Managers', 'permission' => 'user.view', 'route' => 'admin.department-managers.index', 'active' => 'admin.department-managers.*', 'icon' => 'bi-people'],
+        ['label' => 'Attendance Corrections', 'permission' => 'attendance.view', 'route' => 'admin.attendance-corrections.index', 'active' => 'admin.attendance-corrections.*', 'icon' => 'bi-pencil-square'],
     ];
 @endphp
 
@@ -21,7 +25,7 @@
                 <i class="bi bi-building fs-5"></i>
             </span>
             <span class="d-flex flex-column lh-sm">
-                <span class="fw-bold">{{ config('app.name', 'HRMS Laravel') }}</span>
+                <span class="fw-bold">{{ config('app.name', 'Smart HR Connect') }}</span>
                 <span class="small text-white-50">People Operations</span>
             </span>
         </a>

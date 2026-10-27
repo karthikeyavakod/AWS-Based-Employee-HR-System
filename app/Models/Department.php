@@ -31,4 +31,14 @@ class Department extends Model
     {
         return $this->hasMany(Employee::class);
     }
+
+    public function managers(): HasMany
+    {
+        return $this->hasMany(DepartmentManager::class);
+    }
+
+    public function managerUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'department_managers', 'department_id', 'user_id')->withTimestamps();
+    }
 }

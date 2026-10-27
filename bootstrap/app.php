@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\MustChangePassword;
 use App\Http\Middleware\CheckPermission;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'permission' => CheckPermission::class,
+            'must.change.password' => MustChangePassword::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -32,8 +32,13 @@ class LeaveRequestController extends Controller
 
     public function create(): View
     {
+        $user = auth()->user();
         $employees = Employee::query()
             ->when(method_exists(Employee::class, 'user'), fn ($query) => $query->with('user'))
+            ->when(
+                $user?->hasRole('employee') && ! $user->hasAnyRole(['super-admin', 'hr-manager']),
+                fn ($query) => $query->where('user_id', $user->id),
+            )
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
@@ -48,6 +53,13 @@ class LeaveRequestController extends Controller
         LeaveRequestService $leaveRequestService
     ): RedirectResponse {
         $leaveRequestService->create($request->validated());
+
+        if (
+            auth()->user()?->hasRole('employee')
+            && ! auth()->user()?->hasAnyRole(['super-admin', 'hr-manager'])
+        ) {
+            return redirect()->route('employee.dashboard')->with('success', 'Leave request submitted successfully.');
+        }
 
         return redirect()
             ->route('admin.leaves.index')
@@ -74,7 +86,11 @@ class LeaveRequestController extends Controller
         LeaveRequest $leaveRequest,
         LeaveRequestService $leaveRequestService
     ): RedirectResponse {
-        $leaveRequestService->update($leaveRequest, $request->validated());
+        try {
+            $leaveRequestService->update($leaveRequest, $request->validated());
+        } catch (DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('admin.leaves.edit', $leaveRequest)

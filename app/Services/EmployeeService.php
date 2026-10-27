@@ -21,7 +21,7 @@ class EmployeeService
 
             if (Schema::hasColumn('employees', 'user_id')) {
                 $user = $this->createOrUpdateUser(null, $data);
-                $this->assignEmployeeRole($user);
+                $this->assignEmployeeRole($user, $data['role_id'] ?? null);
                 $payload['user_id'] = $user->id;
             }
 
@@ -36,7 +36,17 @@ class EmployeeService
 
             if (Schema::hasColumn('employees', 'user_id')) {
                 $user = $this->createOrUpdateUser($employee->user, $data);
-                $this->assignEmployeeRole($user);
+                if (array_key_exists('role_id', $data)) {
+                    $this->assignEmployeeRole($user, $data['role_id']);
+                }
+                $accountStatus = $data['account_status'] ?? null;
+                if (($payload['status'] ?? null) === 'inactive') {
+                    $accountStatus = 'inactive';
+                }
+                if ($accountStatus !== null && Schema::hasColumn('users', 'status')) {
+                    $user->update(['status' => $accountStatus]);
+                    $user->refresh();
+                }
                 $payload['user_id'] = $user->id;
             }
 
@@ -71,14 +81,19 @@ class EmployeeService
         $payload = [
             'name' => $data['name'] ?? $this->employeeDisplayName($data),
             'email' => $data['email'],
-            'status' => Schema::hasColumn('users', 'status') ? 'active' : null,
+            'status' => $user === null && Schema::hasColumn('users', 'status') ? 'inactive' : null,
         ];
 
-        $payload = array_filter($payload, fn ($value): bool => $value !== null);
-
-        if ($user === null || blank($user->password) || filled($data['password'] ?? null)) {
-            $payload['password'] = Hash::make($data['password'] ?? 'Password@12345');
+        // If a temporary password is provided, use it and force password change on first login
+        if (! blank($data['password'] ?? null)) {
+            $payload['password'] = Hash::make($data['password']);
+            $payload['must_change_password'] = true;
+        } elseif ($user === null && Schema::hasColumn('users', 'password')) {
+            // No temp password provided: generate a random one and send reset link
+            $payload['password'] = Hash::make(Str::random(64));
         }
+
+        $payload = array_filter($payload, fn ($value): bool => $value !== null);
 
         if ($user === null) {
             return User::create($payload);
@@ -89,18 +104,22 @@ class EmployeeService
         return $user->refresh();
     }
 
-    private function assignEmployeeRole(User $user): void
+    private function assignEmployeeRole(User $user, ?int $roleId = null): void
     {
         if (! Schema::hasTable('roles') || ! Schema::hasTable('role_user')) {
             return;
         }
 
-        $role = Role::where('slug', 'employee')
-            ->orWhere('name', 'Employee')
-            ->first();
+        if ($user->hasRole('super-admin')) {
+            return;
+        }
+
+        $role = $roleId === null
+            ? Role::where('slug', 'employee')->orWhere('name', 'Employee')->first()
+            : Role::query()->whereKey($roleId)->where('slug', '!=', 'super-admin')->first();
 
         if ($role !== null) {
-            $user->roles()->syncWithoutDetaching([$role->id]);
+            $user->roles()->sync([$role->id]);
         }
     }
 
@@ -138,7 +157,7 @@ class EmployeeService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function fillGeneratedIdentifier(array &$payload, string $column, ?Employee $employee = null): void
     {
@@ -184,7 +203,7 @@ class EmployeeService
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function employeeDisplayName(array $data): string
     {

@@ -1,4 +1,5 @@
 {
+    "name": "smart-hr-connect",
     "private": true,
     "type": "module",
     "scripts": {

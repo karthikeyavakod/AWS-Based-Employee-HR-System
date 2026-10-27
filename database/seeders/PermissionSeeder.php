@@ -23,6 +23,7 @@ class PermissionSeeder extends Seeder
         'user.create',
         'user.update',
         'user.delete',
+        'user.assign-role',
         'employee.view',
         'employee.create',
         'employee.update',
@@ -39,6 +40,7 @@ class PermissionSeeder extends Seeder
         'attendance.create',
         'attendance.update',
         'attendance.delete',
+        'attendance.correction',
         'leave.view',
         'leave.create',
         'leave.approve',
@@ -48,7 +50,13 @@ class PermissionSeeder extends Seeder
         'payroll.create',
         'payroll.update',
         'payroll.delete',
+        'payroll.approve',
         'report.view',
+        'announcement.view',
+        'announcement.create',
+        'announcement.update',
+        'announcement.delete',
+        'audit.log.view',
     ];
 
     /**
@@ -56,9 +64,11 @@ class PermissionSeeder extends Seeder
      */
     private array $hrManagerPermissions = [
         'dashboard.view',
+        'user.create',
         'employee.view',
         'employee.create',
         'employee.update',
+        'user.update',
         'department.view',
         'department.create',
         'department.update',
@@ -68,11 +78,17 @@ class PermissionSeeder extends Seeder
         'attendance.view',
         'attendance.create',
         'attendance.update',
+        'attendance.correction',
         'leave.view',
         'leave.approve',
         'leave.reject',
         'payroll.view',
+        'payroll.approve',
         'report.view',
+        'announcement.view',
+        'announcement.create',
+        'announcement.update',
+        'audit.log.view',
     ];
 
     /**
@@ -81,6 +97,22 @@ class PermissionSeeder extends Seeder
     private array $employeePermissions = [
         'dashboard.view',
         'leave.create',
+        'announcement.view',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private array $departmentManagerPermissions = [
+        'dashboard.view',
+        'employee.view',
+        'department.view',
+        'designation.view',
+        'attendance.view',
+        'leave.view',
+        'leave.approve',
+        'leave.reject',
+        'announcement.view',
     ];
 
     public function run(): void
@@ -99,10 +131,11 @@ class PermissionSeeder extends Seeder
         $this->assignPermissions('super-admin', Permission::query()->pluck('id')->all());
         $this->assignPermissions('hr-manager', $this->permissionIds($this->hrManagerPermissions));
         $this->assignPermissions('employee', $this->permissionIds($this->employeePermissions));
+        $this->assignPermissions('department-manager', $this->permissionIds($this->departmentManagerPermissions));
     }
 
     /**
-     * @param list<int> $permissionIds
+     * @param  list<int>  $permissionIds
      */
     private function assignPermissions(string $roleSlug, array $permissionIds): void
     {
@@ -113,8 +146,7 @@ class PermissionSeeder extends Seeder
     }
 
     /**
-     * @param list<string> $slugs
-     *
+     * @param  list<string>  $slugs
      * @return list<int>
      */
     private function permissionIds(array $slugs): array

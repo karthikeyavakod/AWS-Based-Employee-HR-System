@@ -72,22 +72,53 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label for="password" class="form-label">Temporary Password <span class="text-danger">*</span></label>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                class="form-control @error('password') is-invalid @enderror"
+                                required
+                            >
+                            @error('password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">Minimum 8 characters. The employee will be required to change this on first login.</div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label for="password_confirmation" class="form-label">Confirm Temporary Password <span class="text-danger">*</span></label>
+                            <input
+                                id="password_confirmation"
+                                type="password"
+                                name="password_confirmation"
+                                class="form-control @error('password_confirmation') is-invalid @enderror"
+                                required
+                            >
+                            @error('password_confirmation')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            name="password"
-                            class="form-control @error('password') is-invalid @enderror"
-                            autocomplete="new-password"
-                        >
-                        <div class="form-text">If empty, default local password Password@12345 will be used.</div>
-                        @error('password')
+                    @if ($roles->isNotEmpty())
+                        <div class="mb-4">
+                            <label for="role_id" class="form-label">Account Role</label>
+                            <select id="role_id" name="role_id" class="form-select @error('role_id') is-invalid @enderror">
+                                @foreach ($roles as $role)
+                                    <option value="{{ $role->id }}" @selected((string) old('role_id', $roles->firstWhere('slug', 'employee')?->id) === (string) $role->id)>
+                                        {{ $role->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Super Admin cannot be assigned through employee onboarding. The account stays inactive until the employee sets a password.</div>
+                            @error('role_id')
                             <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
+                            @enderror
+                        </div>
+                    @endif
                 @endif
 
                 <h2 class="h5 mb-3">Employee Details</h2>

@@ -1,109 +1,72 @@
-# HRMS Laravel
+# Smart HR Connect
 
-HRMS Laravel is a production-style Human Resource Management System built with Laravel 12. It demonstrates custom authentication, custom RBAC authorization, core HR module workflows, reporting, dashboard analytics, and automated feature testing in a clean portfolio-ready codebase.
+Smart HR Connect is an HR management application built with Laravel 12. It provides permission-controlled administration for employee records and core HR workflows.
 
-## Tech Stack
+## Technology
 
-- PHP 8.x
+- PHP 8.2+
 - Laravel 12
 - MySQL
 - Bootstrap 5
-- jQuery
-- DataTables
-- SweetAlert2
-- Git & GitHub
+- PHPUnit
 
-## Core Features
+## Current Features
 
-- Custom authentication
-- Custom role and permission management
-- Permission-protected admin panel
-- Employee management
-- Department management
-- Designation management
-- Attendance management
-- Leave management with approval/rejection workflow
-- Payroll management with net salary calculation
-- Dashboard overview with real stats
-- Read-only reports
-- Automated feature tests
+- Custom authentication with active-account checks
+- Role and permission management (Super Admin, HR Manager, Department Manager, Employee)
+- Permission-protected administration
+- Employee, department, and designation management
+- Admin-controlled employee account setup by expiring password-reset link
+- Role assignment during onboarding with Super Admin excluded from the employee form
+- Account activation/deactivation and inactive-user login protection
+- Employee self-service profile, attendance, leave balance/history, and paid-payslip overview
+- Employee self-service daily check-in/check-out with duplicate prevention and work-minute calculation
+- Attendance management with correction requests
+- Employee-scoped leave requests with approval/rejection and balance deduction
+- Payroll records and net salary calculation with approval workflow
+- Dashboard summaries and paginated read-only reports
+- Company announcements for all employees
+- Department manager assignment with team-scoped authorization
+- Audit logs for sensitive administrative actions
+- Automated feature tests for core administration and authorization
 
-## Screenshots
+## Current Gaps
 
-### Dashboard
+The following capabilities are not currently present or are limited and need additional implementation and verification:
 
-<p align="center">
-  <img src="docs/screenshots/hrms-dashboard.png" alt="HRMS Laravel dashboard screenshot" width="900">
-</p>
+- Downloadable payslips (PDF export)
+- Report CSV/Excel exports
+- Configurable late/half-day business rules for attendance
+- Department-wise attendance summaries
 
-### Login
+The employee portal only exposes the signed-in employee's related records. Employee profile editing is limited to phone and address. Leave balance records are initialized from a leave type's configured default days when the first request is approved. Do not use shared demo credentials or generated sample accounts in production.
 
-<p align="center">
-  <img src="docs/screenshots/hrms-login.png" alt="HRMS Laravel login screenshot" width="900">
-</p>
+## Setup
 
-## Architecture Highlights
-
-- Custom RBAC instead of an external permission package
-- Thin controllers
-- Form Requests for validation
-- Service classes for business logic
-- Eloquent relationships between HRMS modules
-- Permission-based Blade UI visibility
-- Read-only reports separated from CRUD modules
-- Business rules covered by tests
-
-## Modules Completed
-
-- [x] Authentication & Authorization
-- [x] Role & Permission Management
-- [x] Department Management
-- [x] Designation Management
-- [x] Employee Management
-- [x] Attendance Management
-- [x] Leave Management
-- [x] Payroll Management
-- [x] Dashboard
-- [x] Reports
-- [x] Testing & Quality Review
-
-## Installation
-
-Configure the database connection in `.env` before running migrations.
+1. Install PHP and Composer dependencies.
+2. Create `.env` from `.env.example` and configure the database.
+3. Generate an application key and run migrations with seed data.
+4. Start the development server.
 
 ```bash
 composer install
-cp .env.example .env
+copy .env.example .env
 php artisan key:generate
 php artisan migrate --seed
 php artisan serve
 ```
 
-## Default Admin Account
+For PowerShell, `Copy-Item .env.example .env` can be used instead of `copy`.
 
-Local development seed account:
-
-- Email: `admin@example.com`
-- Password: `Password@12345`
-
-Security note: change this credential before production use.
+The local development seeder creates a Super Admin account. Configure and change its credentials before using any shared or production environment.
 
 ## Testing
 
-Latest test snapshot:
+Run the automated test suite with:
 
 ```bash
 php artisan test
 ```
-
-- 76 tests passed
-- 280 assertions
-
-## Documentation
-
-- [Database ERD](docs/database/erd.md)
-- [Authentication & Authorization](docs/authentication-authorization.md)
-- [Testing & Quality Review](docs/testing-quality.md)
 
 ## Useful Commands
 
@@ -113,24 +76,16 @@ php artisan about
 php artisan test
 ```
 
-## Future Enhancements
-
-- PDF export
-- Excel export
-- Email notifications
-- Employee self-service portal
-- API integration
-- Advanced payroll rules
-- Audit logs
-
 ## Production Notes
 
-- Set `APP_DEBUG=false` in production.
-- Do not commit `.env`.
-- Run config, route, and view cache during deployment.
-- Change default admin credentials.
-- Plan database backups before using real HR data.
+- Set `APP_DEBUG=false` and use a unique, secure application key.
+- Configure mail delivery and database credentials through environment variables.
+- Change seeded administrator credentials before deployment.
+- Do not commit `.env` or other secrets.
+- Back up the database before applying migrations to a database with real employee data.
 
-## License
+## Documentation
 
-This project is for portfolio and educational purposes unless a `LICENSE` file is added.
+- [Database ERD](docs/database/erd.md)
+- [Authentication & Authorization](docs/authentication-authorization.md)
+- [Testing & Quality Review](docs/testing-quality.md)

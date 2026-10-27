@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\Leave;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class StoreLeaveRequestRequest extends FormRequest
 {
@@ -18,9 +19,17 @@ class StoreLeaveRequestRequest extends FormRequest
     public function rules(): array
     {
         $rules = [];
+        $user = $this->user();
+        $isEmployee = $user?->hasRole('employee')
+            && ! $user->hasAnyRole(['super-admin', 'hr-manager']);
+        $employee = $isEmployee ? $user->employee : null;
 
         if (Schema::hasColumn('leave_requests', 'employee_id')) {
-            $rules['employee_id'] = ['required', 'integer', 'exists:employees,id'];
+            $rules['employee_id'] = match (true) {
+                $isEmployee && $employee !== null => ['required', 'integer', Rule::in([$employee->id])],
+                $isEmployee => ['prohibited'],
+                default => ['required', 'integer', 'exists:employees,id'],
+            };
         }
 
         if (Schema::hasColumn('leave_requests', 'leave_type_id')) {
@@ -40,7 +49,7 @@ class StoreLeaveRequestRequest extends FormRequest
         }
 
         if (Schema::hasColumn('leave_requests', 'total_days')) {
-            $rules['total_days'] = ['nullable', 'numeric', 'min:0.5'];
+            $rules['total_days'] = $isEmployee ? ['prohibited'] : ['nullable', 'numeric', 'min:0.5'];
         }
 
         if (Schema::hasColumn('leave_requests', 'reason')) {
@@ -48,7 +57,7 @@ class StoreLeaveRequestRequest extends FormRequest
         }
 
         if (Schema::hasColumn('leave_requests', 'status')) {
-            $rules['status'] = ['nullable', 'string', 'max:255'];
+            $rules['status'] = $isEmployee ? ['prohibited'] : ['nullable', 'string', 'max:255'];
         }
 
         if (Schema::hasColumn('leave_requests', 'remarks')) {
@@ -56,7 +65,7 @@ class StoreLeaveRequestRequest extends FormRequest
         }
 
         if (Schema::hasColumn('leave_requests', 'rejection_reason')) {
-            $rules['rejection_reason'] = ['nullable', 'string'];
+            $rules['rejection_reason'] = $isEmployee ? ['prohibited'] : ['nullable', 'string'];
         }
 
         return $rules;

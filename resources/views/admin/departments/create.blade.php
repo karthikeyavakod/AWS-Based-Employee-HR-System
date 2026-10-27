@@ -13,7 +13,7 @@
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Create Department</h1>
-            <p class="text-body-secondary mb-0">Add a new department to the HRMS structure.</p>
+            <p class="text-body-secondary mb-0">Add a new department to your organization.</p>
         </div>
 
         <a href="{{ route('admin.departments.index') }}" class="btn btn-outline-secondary">

@@ -22,7 +22,7 @@
 
         <div class="d-none d-md-flex flex-column flex-shrink-0">
             <span class="navbar-brand mb-0 h1 fs-5">@yield('title', 'Dashboard')</span>
-            <span class="text-body-secondary small">Modern HRMS administration</span>
+            <span class="text-body-secondary small">Smart HR Connect workspace</span>
         </div>
 
         <div class="topbar-search flex-grow-1 d-none d-lg-block">
@@ -64,6 +64,10 @@
                         @endif
                     </div>
                     <div class="dropdown-divider"></div>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('employee.password.change') }}">
+                        <i class="bi bi-key"></i>
+                        <span>Change Password</span>
+                    </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="dropdown-item d-flex align-items-center gap-2">

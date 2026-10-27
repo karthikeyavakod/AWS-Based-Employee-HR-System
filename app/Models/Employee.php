@@ -61,4 +61,9 @@ class Employee extends Model
     {
         return $this->hasMany(Payroll::class);
     }
+
+    public function managedDepartments(): HasMany
+    {
+        return $this->hasMany(DepartmentManager::class, 'user_id', 'user_id');
+    }
 }

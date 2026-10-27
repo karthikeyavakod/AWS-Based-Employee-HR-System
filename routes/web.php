@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AttendanceController;
+use App\Http\Controllers\Admin\AttendanceCorrectionController;
+use App\Http\Controllers\Admin\CompanyAnnouncementController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DepartmentManagerController;
 use App\Http\Controllers\Admin\DesignationController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\PayrollController;
@@ -10,18 +14,35 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeePortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:login');
+
+    Route::get('/forgot-password', [NewPasswordController::class, 'create'])
+        ->name('password.request');
+
+    Route::post('/forgot-password', [NewPasswordController::class, 'email'])
+        ->middleware('throttle:5,1')
+        ->name('password.email');
+
+    Route::get('/password/reset/{token}', [NewPasswordController::class, 'edit'])
+        ->name('password.reset');
+
+    Route::post('/password/reset', [NewPasswordController::class, 'update'])
+        ->middleware('throttle:5,1')
+        ->name('password.update');
 });
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -31,6 +52,17 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'permission:dashboard.view'])
     ->name('dashboard');
+
+Route::middleware(['auth', 'must.change.password'])->prefix('my')->name('employee.')->group(function () {
+    Route::get('/', [EmployeePortalController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [EmployeePortalController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile', [EmployeePortalController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/password/change', [Employee\PasswordChangeController::class, 'show'])->name('password.change');
+    Route::put('/password/change', [Employee\PasswordChangeController::class, 'update'])->name('password.update');
+    Route::post('/attendance/check-in', [EmployeePortalController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('/attendance/check-out', [EmployeePortalController::class, 'checkOut'])->name('attendance.check-out');
+    Route::get('/announcements', [EmployeePortalController::class, 'announcements'])->name('announcements');
+});
 
 Route::middleware('auth')
     ->prefix('admin')
@@ -131,6 +163,10 @@ Route::middleware('auth')
         Route::post('/employees', [EmployeeController::class, 'store'])
             ->middleware('permission:employee.create')
             ->name('employees.store');
+
+        Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])
+            ->middleware('permission:user.create')
+            ->name('employees.invite');
 
         Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])
             ->middleware('permission:employee.update')
@@ -243,4 +279,56 @@ Route::middleware('auth')
         Route::get('/reports/payrolls', [ReportController::class, 'payrolls'])
             ->middleware('permission:report.view')
             ->name('reports.payrolls');
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])
+            ->middleware('permission:audit.log.view')
+            ->name('audit-logs.index');
+
+        Route::get('/department-managers', [DepartmentManagerController::class, 'index'])
+            ->middleware('permission:user.view')
+            ->name('department-managers.index');
+        Route::get('/department-managers/create', [DepartmentManagerController::class, 'create'])
+            ->middleware('permission:user.create')
+            ->name('department-managers.create');
+        Route::post('/department-managers', [DepartmentManagerController::class, 'store'])
+            ->middleware('permission:user.create')
+            ->name('department-managers.store');
+        Route::delete('/department-managers/{departmentManager}', [DepartmentManagerController::class, 'destroy'])
+            ->middleware('permission:user.delete')
+            ->name('department-managers.destroy');
+
+        Route::get('/announcements', [CompanyAnnouncementController::class, 'index'])
+            ->middleware('permission:announcement.view')
+            ->name('announcements.index');
+        Route::get('/announcements/create', [CompanyAnnouncementController::class, 'create'])
+            ->middleware('permission:announcement.create')
+            ->name('announcements.create');
+        Route::post('/announcements', [CompanyAnnouncementController::class, 'store'])
+            ->middleware('permission:announcement.create')
+            ->name('announcements.store');
+        Route::get('/announcements/{announcement}/edit', [CompanyAnnouncementController::class, 'edit'])
+            ->middleware('permission:announcement.update')
+            ->name('announcements.edit');
+        Route::put('/announcements/{announcement}', [CompanyAnnouncementController::class, 'update'])
+            ->middleware('permission:announcement.update')
+            ->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [CompanyAnnouncementController::class, 'destroy'])
+            ->middleware('permission:announcement.delete')
+            ->name('announcements.destroy');
+
+        Route::get('/attendance-corrections', [AttendanceCorrectionController::class, 'index'])
+            ->middleware('permission:attendance.view')
+            ->name('attendance-corrections.index');
+        Route::get('/attendance-corrections/create', [AttendanceCorrectionController::class, 'create'])
+            ->middleware('permission:attendance.correction')
+            ->name('attendance-corrections.create');
+        Route::post('/attendance-corrections', [AttendanceCorrectionController::class, 'store'])
+            ->middleware('permission:attendance.correction')
+            ->name('attendance-corrections.store');
+        Route::get('/attendance-corrections/{attendanceCorrection}/review', [AttendanceCorrectionController::class, 'review'])
+            ->middleware('permission:attendance.view')
+            ->name('attendance-corrections.review');
+        Route::put('/attendance-corrections/{attendanceCorrection}', [AttendanceCorrectionController::class, 'update'])
+            ->middleware('permission:attendance.view')
+            ->name('attendance-corrections.update');
     });

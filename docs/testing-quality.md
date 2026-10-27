@@ -8,7 +8,7 @@ Latest command:
 php artisan test
 ```
 
-Current result: 76 tests passed, 280 assertions.
+Current result: 85 tests passed, 344 assertions.
 
 The automated test suites include:
 
@@ -22,6 +22,7 @@ The automated test suites include:
 - Payroll management tests
 - Dashboard overview tests
 - Reports tests
+- Employee onboarding and portal tests
 
 ## Automated Test Coverage Summary
 

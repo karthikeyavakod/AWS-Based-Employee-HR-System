@@ -23,7 +23,15 @@ class StoreEmployeeRequest extends FormRequest
         if (Schema::hasColumn('employees', 'user_id')) {
             $rules['name'] = ['required', 'string', 'max:255'];
             $rules['email'] = ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')];
-            $rules['password'] = ['nullable', 'string', 'min:8'];
+            $rules['password'] = ['nullable', 'string', 'min:8', 'confirmed'];
+            $rules['password_confirmation'] = ['nullable', 'string', 'required_with:password'];
+            $rules['role_id'] = $this->user()?->hasPermission('user.assign-role')
+                ? [
+                    'sometimes',
+                    'integer',
+                    Rule::exists('roles', 'id')->whereNot('slug', 'super-admin'),
+                ]
+                : ['prohibited'];
         }
 
         if (Schema::hasColumn('employees', 'department_id')) {

@@ -450,7 +450,7 @@
 
         <div class="offcanvas offcanvas-start admin-sidebar-offcanvas text-white" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarLabel">
             <div class="offcanvas-header border-bottom border-secondary-subtle">
-                <h5 class="offcanvas-title" id="adminSidebarLabel">{{ config('app.name', 'HRMS Laravel') }}</h5>
+                <h5 class="offcanvas-title" id="adminSidebarLabel">{{ config('app.name', 'Smart HR Connect') }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body p-0">

@@ -1,8 +1,8 @@
-# HRMS Laravel - Database ERD
+# Smart HR Connect - Database ERD
 
 ## Purpose
 
-This document describes the Entity Relationship Diagram (ERD) for the HRMS Laravel project.
+This document describes the Entity Relationship Diagram (ERD) for the Smart HR Connect project.
 
 ## ERD Scope
 
@@ -293,4 +293,3 @@ erDiagram
     PAYSLIPS ||--o{ PAYSLIP_ITEMS : "has payslip items"
     SALARY_COMPONENTS ||--o{ PAYSLIP_ITEMS : "used in payslip items"
 ```
-

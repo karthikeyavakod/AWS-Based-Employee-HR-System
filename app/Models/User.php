@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'status',
+        'must_change_password',
     ];
 
     /**
@@ -58,6 +59,26 @@ class User extends Authenticatable
     public function employee(): HasOne
     {
         return $this->hasOne(Employee::class);
+    }
+
+    public function departmentManagers(): HasMany
+    {
+        return $this->hasMany(DepartmentManager::class);
+    }
+
+    public function managedDepartments(): HasMany
+    {
+        return $this->hasMany(Department::class, 'id')->join('department_managers', 'departments.id', '=', 'department_managers.department_id')->where('department_managers.user_id', $this->id);
+    }
+
+    public function isDepartmentManager(): bool
+    {
+        return $this->hasRole('department-manager') || $this->departmentManagers()->exists();
+    }
+
+    public function managedDepartmentIds(): array
+    {
+        return $this->departmentManagers()->pluck('department_id')->all();
     }
 
     public function hasRole(string $role): bool

@@ -33,6 +33,12 @@
             Please review the highlighted fields and try again.
         </div>
     @endif
+    @if (session('success'))
+        <div class="alert alert-success" role="status">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+    @endif
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
@@ -75,20 +81,38 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            name="password"
-                            class="form-control @error('password') is-invalid @enderror"
-                            autocomplete="new-password"
-                        >
-                        <div class="form-text">Leave blank to keep current password.</div>
-                        @error('password')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    @if (auth()->user()?->hasPermission('user.assign-role') && $roles->isNotEmpty() && ! $employee->user?->hasRole('super-admin'))
+                        @php
+                            $currentRoleId = $employee->user?->roles?->first()?->id;
+                        @endphp
+                        <div class="mb-3">
+                            <label for="role_id" class="form-label">Account Role</label>
+                            <select id="role_id" name="role_id" class="form-select @error('role_id') is-invalid @enderror">
+                                @foreach ($roles as $role)
+                                    <option value="{{ $role->id }}" @selected((string) old('role_id', $currentRoleId) === (string) $role->id)>
+                                        {{ $role->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Super Admin cannot be assigned through employee management.</div>
+                            @error('role_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
+                    @if (auth()->user()?->hasPermission('user.update'))
+                        <div class="mb-4">
+                            <label for="account_status" class="form-label">Account Status</label>
+                            <select id="account_status" name="account_status" class="form-select @error('account_status') is-invalid @enderror">
+                                <option value="active" @selected(old('account_status', $employee->user?->status) === 'active')>Active</option>
+                                <option value="inactive" @selected(old('account_status', $employee->user?->status) !== 'active')>Inactive</option>
+                            </select>
+                            <div class="form-text">Inactive accounts cannot sign in.</div>
+                            @error('account_status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
                 @endif
 
                 <h2 class="h5 mb-3">Employee Details</h2>
@@ -286,4 +310,11 @@
             </form>
         </div>
     </div>
+
+    @if ($hasUser && auth()->user()?->hasPermission('user.create') && $employee->user !== null && $employee->user->status !== 'active')
+        <form method="POST" action="{{ route('admin.employees.invite', $employee) }}" class="mt-3">
+            @csrf
+            <button type="submit" class="btn btn-outline-primary">Send account setup link</button>
+        </form>
+    @endif
 @endsection

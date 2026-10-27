@@ -6,7 +6,7 @@
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Reports</h1>
-            <p class="text-body-secondary mb-0">Read-only HRMS reports for people, attendance, leave, and payroll data.</p>
+            <p class="text-body-secondary mb-0">Read-only reports for people, attendance, leave, and payroll data.</p>
         </div>
     </div>
 

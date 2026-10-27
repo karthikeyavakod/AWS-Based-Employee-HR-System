@@ -49,7 +49,7 @@
                     <div>
                         <h1 class="h2 fw-bold mb-1">Dashboard</h1>
                         <p class="text-body-secondary mb-0">
-                            Welcome, {{ $user?->name ?? 'User' }}. HRMS overview and current system summary.
+                            Welcome, {{ $user?->name ?? 'User' }}. Here is your Smart HR Connect overview.
                         </p>
                     </div>
                 </div>

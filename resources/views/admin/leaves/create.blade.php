@@ -22,10 +22,12 @@
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Create Leave Request</h1>
-            <p class="text-body-secondary mb-0">Submit a leave request for an employee.</p>
+            <p class="text-body-secondary mb-0">
+                {{ auth()->user()?->hasRole('employee') && ! auth()->user()?->hasAnyRole(['super-admin', 'hr-manager']) ? 'Submit your leave request.' : 'Submit a leave request for an employee.' }}
+            </p>
         </div>
 
-        <a href="{{ route('admin.leaves.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ auth()->user()?->hasRole('employee') && ! auth()->user()?->hasAnyRole(['super-admin', 'hr-manager']) ? route('employee.dashboard') : route('admin.leaves.index') }}" class="btn btn-outline-secondary">
             Back
         </a>
     </div>
@@ -152,7 +154,7 @@
                         </div>
                     @endif
 
-                    @if ($hasStatus)
+                    @if ($hasStatus && ! (auth()->user()?->hasRole('employee') && ! auth()->user()?->hasAnyRole(['super-admin', 'hr-manager'])))
                         <div class="col-12 col-lg-6">
                             <label for="status" class="form-label">Status</label>
                             <select id="status" name="status" class="form-select @error('status') is-invalid @enderror">
@@ -199,7 +201,7 @@
                 @endif
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('admin.leaves.index') }}" class="btn btn-light border">Cancel</a>
+                    <a href="{{ auth()->user()?->hasRole('employee') && ! auth()->user()?->hasAnyRole(['super-admin', 'hr-manager']) ? route('employee.dashboard') : route('admin.leaves.index') }}" class="btn btn-light border">Cancel</a>
                     <button type="submit" class="btn btn-primary">Create Leave Request</button>
                 </div>
             </form>

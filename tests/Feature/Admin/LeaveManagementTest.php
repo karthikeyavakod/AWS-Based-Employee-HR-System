@@ -144,6 +144,17 @@ class LeaveManagementTest extends TestCase
         if (Schema::hasColumn('leave_requests', 'approved_at')) {
             $this->assertNotNull($leaveRequest->refresh()->approved_at);
         }
+
+        if (Schema::hasTable('leave_balances')) {
+            $this->assertDatabaseHas('leave_balances', [
+                'employee_id' => $employee->id,
+                'leave_type_id' => $leaveTypeId,
+                'year' => 2026,
+                'allocated_days' => 12,
+                'used_days' => 2,
+                'remaining_days' => 10,
+            ]);
+        }
     }
 
     public function test_super_admin_can_reject_a_leave_request(): void
@@ -407,8 +418,7 @@ class LeaveManagementTest extends TestCase
     }
 
     /**
-     * @param array<string, string|int> $payload
-     *
+     * @param  array<string, string|int>  $payload
      * @return array<string, string|int>
      */
     private function employeeDatabaseAssertion(array $payload): array
@@ -489,8 +499,7 @@ class LeaveManagementTest extends TestCase
     }
 
     /**
-     * @param array<string, string|int|null> $payload
-     *
+     * @param  array<string, string|int|null>  $payload
      * @return array<string, string|int|null>
      */
     private function leaveDatabaseAssertion(array $payload): array

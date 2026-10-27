@@ -10,7 +10,16 @@ class UpdateEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->hasPermission('employee.update');
+        $user = $this->user();
+        $employee = $this->route('employee');
+
+        if (! $user?->hasPermission('employee.update')) {
+            return false;
+        }
+
+        return ! Schema::hasColumn('employees', 'user_id')
+            || $employee?->user !== null
+            || (bool) $user->hasPermission('user.create');
     }
 
     /**
@@ -30,7 +39,17 @@ class UpdateEmployeeRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($employee?->user_id),
             ];
-            $rules['password'] = ['nullable', 'string', 'min:8'];
+            $rules['account_status'] = $this->user()?->hasPermission('user.update')
+                ? ['sometimes', 'required', 'in:active,inactive']
+                : ['prohibited'];
+            $rules['role_id'] = $this->user()?->hasPermission('user.assign-role')
+                ? [
+                    'sometimes',
+                    'required',
+                    'integer',
+                    Rule::exists('roles', 'id')->whereNot('slug', 'super-admin'),
+                ]
+                : ['prohibited'];
         }
 
         if (Schema::hasColumn('employees', 'department_id')) {

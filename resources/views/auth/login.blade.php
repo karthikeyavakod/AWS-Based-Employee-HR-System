@@ -14,12 +14,12 @@
                                     <i class="bi bi-building fs-4"></i>
                                 </span>
                                 <div>
-                                    <div class="h4 fw-bold mb-0">{{ config('app.name', 'HRMS Laravel') }}</div>
+                                    <div class="h4 fw-bold mb-0">{{ config('app.name', 'Smart HR Connect') }}</div>
                                     <div class="text-white-50">People Operations Platform</div>
                                 </div>
                             </div>
 
-                            <h1 class="display-6 fw-bold mb-3">Modern HRMS Administration</h1>
+                            <h1 class="display-6 fw-bold mb-3">People operations, connected</h1>
                             <p class="text-white-50 mb-4">
                                 Manage employee records, attendance, leave, payroll, and reports from one secure workspace.
                             </p>
@@ -55,8 +55,12 @@
                                 <i class="bi bi-building fs-4"></i>
                             </div>
                             <h2 class="h3 fw-bold mb-2">Sign in</h2>
-                            <p class="mb-0 text-body-secondary">Access your HRMS dashboard.</p>
+                            <p class="mb-0 text-body-secondary">Sign in to your Smart HR Connect workspace.</p>
                         </div>
+
+                        @if (session('status'))
+                            <div class="alert alert-success" role="status">{{ session('status') }}</div>
+                        @endif
 
                         @if ($errors->any())
                             <div class="alert alert-danger" role="alert">
@@ -119,6 +123,9 @@
                                 <i class="bi bi-arrow-right ms-1"></i>
                             </button>
                         </form>
+                        <div class="text-center mt-3">
+                            <a href="{{ route('password.request') }}">Forgot your password or need to set it up?</a>
+                        </div>
                     </div>
                 </div>
             </div>

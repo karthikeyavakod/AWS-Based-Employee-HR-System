@@ -12,7 +12,7 @@
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Roles</h1>
-            <p class="text-body-secondary mb-0">Manage access groups for HRMS users.</p>
+            <p class="text-body-secondary mb-0">Manage access groups for Smart HR Connect users.</p>
         </div>
 
         @if ($user?->hasPermission('role.create'))

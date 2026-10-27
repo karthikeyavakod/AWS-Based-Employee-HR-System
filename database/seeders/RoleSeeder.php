@@ -25,6 +25,11 @@ class RoleSeeder extends Seeder
                 'slug' => 'employee',
                 'description' => 'Standard employee self-service access.',
             ],
+            [
+                'name' => 'Department Manager',
+                'slug' => 'department-manager',
+                'description' => 'Manages a specific department and its team members.',
+            ],
         ];
 
         foreach ($roles as $role) {
