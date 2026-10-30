@@ -90,14 +90,24 @@
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    name="password"
-                                    class="form-control @error('password') is-invalid @enderror"
-                                    autocomplete="current-password"
-                                    required
-                                >
+                                <div class="input-group has-password-toggle">
+                                    <input
+                                        id="password"
+                                        type="password"
+                                        name="password"
+                                        class="form-control @error('password') is-invalid @enderror password-toggle-input"
+                                        autocomplete="current-password"
+                                        required
+                                    >
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary password-toggle-btn"
+                                        id="togglePassword"
+                                        aria-label="Toggle password visibility"
+                                    >
+                                        <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                                    </button>
+                                </div>
                                 @error('password')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -126,6 +136,56 @@
                         <div class="text-center mt-3">
                             <a href="{{ route('password.request') }}">Forgot your password or need to set it up?</a>
                         </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const toggleBtn = document.getElementById('togglePassword');
+                                const passwordInput = document.getElementById('password');
+                                const toggleIcon = document.getElementById('togglePasswordIcon');
+
+                                if (toggleBtn && passwordInput && toggleIcon) {
+                                    toggleBtn.addEventListener('click', function () {
+                                        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                                        passwordInput.setAttribute('type', type);
+                                        toggleIcon.classList.toggle('bi-eye-slash');
+                                        toggleIcon.classList.toggle('bi-eye');
+                                        toggleBtn.setAttribute(
+                                            'aria-label',
+                                            type === 'password' ? 'Show password' : 'Hide password'
+                                        );
+                                    });
+                                }
+                            });
+                        </script>
+                        <style>
+                            .has-password-toggle {
+                                display: flex;
+                                align-items: center;
+                            }
+                            .has-password-toggle .password-toggle-input {
+                                border-right: 0;
+                                border-top-right-radius: 0;
+                                border-bottom-right-radius: 0;
+                            }
+                            .has-password-toggle .password-toggle-btn {
+                                border-left: 0;
+                                border-top-left-radius: 0;
+                                border-bottom-left-radius: 0;
+                                padding: 0.5rem 0.75rem;
+                                min-height: 2.9rem;
+                                background: #FBFDFE;
+                                border-color: #D8E8EE;
+                                color: #6b7f89;
+                            }
+                            .has-password-toggle .password-toggle-btn:hover {
+                                background: #f0f4f6;
+                                border-color: #2B77A0;
+                                color: #2B77A0;
+                            }
+                            .has-password-toggle .password-toggle-btn:focus {
+                                box-shadow: 0 0 0 0.2rem rgba(43, 119, 160, 0.12);
+                            }
+                        </style>
                     </div>
                 </div>
             </div>
