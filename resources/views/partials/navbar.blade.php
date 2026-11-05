@@ -1,9 +1,26 @@
 @php
     $user = auth()->user();
     $roles = collect();
+    $announcements = collect();
+    $announcementsUrl = null;
 
     if ($user !== null) {
         $roles = $user->relationLoaded('roles') ? $user->roles : $user->roles()->orderBy('name')->get();
+
+        if ($user->hasPermission('announcement.view')) {
+            $announcementsUrl = route('admin.announcements.index');
+        } elseif ($user->hasRole('employee')) {
+            $announcementsUrl = route('employee.announcements');
+        }
+
+        if ($announcementsUrl !== null && \Illuminate\Support\Facades\Schema::hasTable('company_announcements')) {
+            $announcements = \App\Models\CompanyAnnouncement::query()
+                ->published()
+                ->with('creator')
+                ->latest()
+                ->limit(5)
+                ->get();
+        }
     }
 @endphp
 
@@ -31,15 +48,46 @@
         </div>
 
         <div class="d-flex align-items-center gap-2 ms-auto">
-            <button type="button" class="topbar-icon-btn" aria-label="Messages">
+            <a href="{{ $announcementsUrl ?? '#' }}" class="topbar-icon-btn text-decoration-none text-dark {{ $announcementsUrl === null ? 'disabled opacity-50' : '' }}" aria-label="Messages" {{ $announcementsUrl === null ? 'tabindex="-1" aria-disabled="true"' : '' }}>
                 <i class="bi bi-chat-dots"></i>
-            </button>
-            <button type="button" class="topbar-icon-btn position-relative" aria-label="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                    <span class="visually-hidden">New notifications</span>
-                </span>
-            </button>
+            </a>
+            <div class="dropdown">
+                <button class="topbar-icon-btn position-relative dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications" {{ $announcementsUrl === null ? 'disabled' : '' }}>
+                    <i class="bi bi-bell"></i>
+                    @if ($announcements->isNotEmpty())
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                            <span class="visually-hidden">New notifications</span>
+                        </span>
+                    @endif
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-0" style="width: 340px;">
+                    <div class="dropdown-header px-3 py-2 border-bottom">
+                        <span class="fw-semibold small">Notifications</span>
+                        @if ($announcementsUrl)
+                            <a href="{{ $announcementsUrl }}" class="small text-decoration-none float-end">View all</a>
+                        @endif
+                    </div>
+                    @if ($announcements->isNotEmpty())
+                        <div class="list-group list-group-flush">
+                            @foreach ($announcements as $announcement)
+                                <a href="{{ $announcementsUrl }}" class="list-group-item list-group-item-action d-flex gap-2 p-2 text-decoration-none text-dark">
+                                    <div class="bg-light bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 2.5rem; height: 2.5rem;">
+                                        <i class="bi bi-bell text-primary fs-6"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold small">{{ $announcement->title }}</div>
+                                        <div class="text-body-secondary smaller">{{ $announcement->publish_at?->format('M d, Y') ?? 'Immediate' }}</div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="p-3 text-center text-body-secondary small">
+                            No new notifications.
+                        </div>
+                    @endif
+                </div>
+            </div>
 
             <div class="dropdown">
                 <button class="btn btn-light border d-flex align-items-center gap-2 px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">

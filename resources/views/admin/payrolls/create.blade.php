@@ -16,6 +16,7 @@
         $statusColumn = Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'payment_status') ? 'payment_status' : (Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'status') ? 'status' : null);
         $paymentDateColumn = Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'payment_date') ? 'payment_date' : (Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'paid_at') ? 'paid_at' : null);
         $noteColumn = Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'remarks') ? 'remarks' : (Illuminate\Support\Facades\Schema::hasColumn($payrollTable, 'note') ? 'note' : null);
+        $selectedPayrollRunId = old('payroll_run_id');
     @endphp
 
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
@@ -65,10 +66,11 @@
                     @if ($hasPayrollRun)
                         <div class="col-12 col-lg-6">
                             <label for="payroll_run_id" class="form-label">Payroll Run <span class="text-danger">*</span></label>
-                            <select id="payroll_run_id" name="payroll_run_id" class="form-select @error('payroll_run_id') is-invalid @enderror" required>
+                            <input type="hidden" name="payroll_run_id" id="payroll_run_id" value="{{ (string) $selectedPayrollRunId }}">
+                            <select id="payroll_run_select" name="payroll_run_select" class="form-select @error('payroll_run_id') is-invalid @enderror" required>
                                 <option value="">Select payroll run</option>
                                 @foreach ($payrollRuns as $payrollRun)
-                                    <option value="{{ $payrollRun->id }}" @selected((string) old('payroll_run_id') === (string) $payrollRun->id)>
+                                    <option value="{{ $payrollRun->id }}" @selected((string) $selectedPayrollRunId === (string) $payrollRun->id)>
                                         {{ $payrollRun->title ?? 'Payroll Run #'.$payrollRun->id }}
                                         @if (isset($payrollRun->period_month, $payrollRun->period_year))
                                             ({{ $payrollRun->period_month }}/{{ $payrollRun->period_year }})
@@ -254,4 +256,20 @@
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            var dropdown = document.getElementById('payroll_run_select');
+            var hiddenInput = document.getElementById('payroll_run_id');
+            if (dropdown && hiddenInput) {
+                dropdown.addEventListener('change', function () {
+                    hiddenInput.value = dropdown.value;
+                });
+                document.querySelector('form').addEventListener('submit', function () {
+                    hiddenInput.value = dropdown.value;
+                });
+                hiddenInput.value = dropdown.value;
+            }
+        })();
+    </script>
 @endsection

@@ -27,9 +27,7 @@ class DepartmentManagerController extends Controller
     {
         $departments = Department::query()->where('status', 'active')->orderBy('name')->get();
         $managers = User::query()
-            ->whereHas('roles', function ($query) {
-                $query->whereIn('slug', ['hr-manager', 'department-manager']);
-            })
+            ->where('status', 'active')
             ->orderBy('name')
             ->get();
 

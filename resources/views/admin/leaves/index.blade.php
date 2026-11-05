@@ -124,7 +124,7 @@
                                             </a>
                                         @endif
 
-                                        @if ($user?->hasPermission('leave.approve'))
+                                        @if ($user?->hasPermission('leave.approve') && $leaveRequest->status !== 'approved')
                                             <form method="POST" action="{{ route('admin.leaves.approve', $leaveRequest) }}">
                                                 @csrf
                                                 @method('PATCH')
@@ -134,7 +134,7 @@
                                             </form>
                                         @endif
 
-                                        @if ($user?->hasPermission('leave.reject'))
+                                        @if ($user?->hasPermission('leave.reject') && $leaveRequest->status !== 'approved')
                                             <form method="POST" action="{{ route('admin.leaves.reject', $leaveRequest) }}">
                                                 @csrf
                                                 @method('PATCH')

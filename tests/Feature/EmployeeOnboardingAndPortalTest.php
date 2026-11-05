@@ -123,6 +123,43 @@ class EmployeeOnboardingAndPortalTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_login_requires_email_and_password(): void
+    {
+        $this->post('/login', [])
+            ->assertSessionHasErrors(['email', 'password']);
+    }
+
+    public function test_login_rejects_invalid_email_format(): void
+    {
+        $this->post('/login', [
+            'email' => 'not-an-email',
+            'password' => 'Password1234',
+        ])->assertSessionHasErrors('email');
+    }
+
+    public function test_login_rejects_short_password(): void
+    {
+        $this->post('/login', [
+            'email' => 'user@example.com',
+            'password' => 'short',
+        ])->assertSessionHasErrors('password');
+    }
+
+    public function test_login_rejects_wrong_password_for_active_user(): void
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('A-secure-employee-password'),
+            'status' => 'active',
+        ]);
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'Wrong-password-1234',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
     public function test_employee_can_check_in_once_and_check_out_with_calculated_hours(): void
     {
         $this->superAdmin();
