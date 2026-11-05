@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\DepartmentManager;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -47,10 +48,23 @@ class DepartmentManagerController extends Controller
                 'user_id' => $request->user_id,
             ]);
 
-            $user = User::find($request->user_id);
+            $user = User::findOrFail($request->user_id);
             $role = Role::where('slug', 'department-manager')->first();
             if ($role && !$user->hasRole('department-manager')) {
+                $oldRoles = $user->roles()->orderBy('slug')->pluck('slug')->all();
                 $user->roles()->syncWithoutDetaching([$role->id]);
+                $newRoles = $user->roles()->orderBy('slug')->pluck('slug')->all();
+
+                app(AuditLogService::class)->log(
+                    'updated',
+                    'users',
+                    (int) $user->getKey(),
+                    'User',
+                    ['roles' => $oldRoles],
+                    ['roles' => $newRoles],
+                    'Department manager role assigned',
+                    subjectName: $user->name,
+                );
             }
         });
 

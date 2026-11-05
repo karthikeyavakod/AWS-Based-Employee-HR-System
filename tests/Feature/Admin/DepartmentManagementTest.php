@@ -45,6 +45,27 @@ class DepartmentManagementTest extends TestCase
             ->assertSeeText($department->name);
     }
 
+    public function test_flash_feedback_is_rendered_as_a_popup_notification(): void
+    {
+        $admin = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->withSession(['success' => 'Department updated successfully.'])
+            ->get(route('admin.departments.index'))
+            ->assertOk()
+            ->assertSee('data-feedback-toast', false)
+            ->assertSeeText('Department updated successfully.');
+    }
+
+    public function test_guest_flash_feedback_is_rendered_as_a_popup_notification(): void
+    {
+        $this->withSession(['status' => 'Your password has been set.'])
+            ->get(route('login'))
+            ->assertOk()
+            ->assertSee('data-feedback-toast', false)
+            ->assertSeeText('Your password has been set.');
+    }
+
     public function test_super_admin_can_create_a_department(): void
     {
         $admin = $this->superAdmin();

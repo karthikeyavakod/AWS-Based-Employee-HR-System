@@ -47,7 +47,22 @@ class RoleService
     public function syncPermissions(Role $role, array $permissionIds): void
     {
         DB::transaction(function () use ($role, $permissionIds): void {
+            $oldPermissions = $role->permissions()->orderBy('slug')->pluck('slug')->all();
             $role->permissions()->sync($permissionIds);
+            $newPermissions = $role->permissions()->orderBy('slug')->pluck('slug')->all();
+
+            if ($oldPermissions !== $newPermissions) {
+                app(AuditLogService::class)->log(
+                    'updated',
+                    'permissions',
+                    (int) $role->getKey(),
+                    'Role',
+                    ['permissions' => $oldPermissions],
+                    ['permissions' => $newPermissions],
+                    'Permissions updated for role '.$role->name,
+                    subjectName: $role->name,
+                );
+            }
         });
     }
 

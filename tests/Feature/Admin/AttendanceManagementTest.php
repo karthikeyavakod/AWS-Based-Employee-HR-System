@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\User;
+use Database\Seeders\AttendanceSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SuperAdminSeeder;
@@ -135,6 +136,32 @@ class AttendanceManagementTest extends TestCase
                 ->whereDate('attendance_date', '2026-02-06')
                 ->count(),
         );
+    }
+
+    public function test_attendance_seeder_creates_employee_records_and_is_safe_to_rerun(): void
+    {
+        $employees = [
+            $this->createEmployee('Attendance', 'Seeded One'),
+            $this->createEmployee('Attendance', 'Seeded Two'),
+        ];
+
+        $this->seed(AttendanceSeeder::class);
+
+        foreach ($employees as $employee) {
+            $this->assertGreaterThanOrEqual(
+                10,
+                Attendance::where('employee_id', $employee->id)->count(),
+            );
+            $this->assertLessThanOrEqual(
+                15,
+                Attendance::where('employee_id', $employee->id)->count(),
+            );
+        }
+
+        $recordsBeforeRerun = Attendance::count();
+        $this->seed(AttendanceSeeder::class);
+
+        $this->assertSame($recordsBeforeRerun, Attendance::count());
     }
 
     private function superAdmin(): User

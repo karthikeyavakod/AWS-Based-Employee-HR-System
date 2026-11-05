@@ -2,10 +2,13 @@
 /node_modules
 /public/build
 /public/hot
+/bootstrap/ssr
 /public/storage
 /storage/*.key
 /storage/pail
 /vendor
+/.env.*
+!/.env.example
 .env
 .env.backup
 .env.production
@@ -21,3 +24,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.DS_Store
+Thumbs.db

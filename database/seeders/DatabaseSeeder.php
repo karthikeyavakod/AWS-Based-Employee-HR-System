@@ -17,7 +17,9 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             LeaveTypeSeeder::class,
             PayrollRunSeeder::class,
+            PayrollSeeder::class,
             SuperAdminSeeder::class,
+            AttendanceSeeder::class,
         ]);
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Payroll;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\DashboardService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SuperAdminSeeder;
@@ -99,6 +100,31 @@ class DashboardOverviewTest extends TestCase
             ->assertSeeText('Recent Employees')
             ->assertSeeText('Recent Leave Requests')
             ->assertSeeText('Recent Payrolls');
+    }
+
+    public function test_dashboard_counts_payrolls_for_the_current_month(): void
+    {
+        $department = Department::create($this->departmentAttributes('Current Payroll Department'));
+        $designation = Designation::create($this->designationAttributes('Current Payroll Designation', $department));
+        $employee = $this->createEmployee('Current', 'Payroll', $department, $designation);
+        $payrollRunId = $this->createPayrollRun(
+            'Current Month Payroll',
+            (int) today()->format('Y'),
+            (int) today()->format('n'),
+        );
+
+        $this->assertNotNull($payrollRunId);
+        $this->assertNotNull($this->createPayroll($employee, $payrollRunId));
+        $expectedCount = DB::table($this->payrollTable())
+            ->join('payroll_runs', $this->payrollTable().'.payroll_run_id', '=', 'payroll_runs.id')
+            ->where('payroll_runs.period_year', (int) today()->format('Y'))
+            ->where('payroll_runs.period_month', (int) today()->format('n'))
+            ->count();
+
+        $this->assertSame(
+            $expectedCount,
+            app(DashboardService::class)->getStats()['current_month_payrolls_count'],
+        );
     }
 
     public function test_dashboard_quick_links_are_permission_aware(): void
@@ -258,13 +284,28 @@ class DashboardOverviewTest extends TestCase
         return LeaveRequest::create($payload);
     }
 
-    private function createPayrollRun(string $title): ?int
+    private function createPayrollRun(string $title, ?int $year = null, ?int $month = null): ?int
     {
         if (! Schema::hasTable('payroll_runs')) {
             return null;
         }
 
-        [$year, $month] = $this->unusedPayrollRunPeriod();
+        if ($year === null || $month === null) {
+            [$year, $month] = $this->unusedPayrollRunPeriod();
+        } elseif (
+            Schema::hasColumn('payroll_runs', 'period_year')
+            && Schema::hasColumn('payroll_runs', 'period_month')
+        ) {
+            $existingId = DB::table('payroll_runs')
+                ->where('period_year', $year)
+                ->where('period_month', $month)
+                ->value('id');
+
+            if ($existingId !== null) {
+                return (int) $existingId;
+            }
+        }
+
         $attributes = [];
 
         if (Schema::hasColumn('payroll_runs', 'title')) {

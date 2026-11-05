@@ -56,7 +56,6 @@ class PermissionSeeder extends Seeder
         'announcement.create',
         'announcement.update',
         'announcement.delete',
-        'audit.log.view',
     ];
 
     /**
@@ -88,7 +87,6 @@ class PermissionSeeder extends Seeder
         'announcement.view',
         'announcement.create',
         'announcement.update',
-        'audit.log.view',
     ];
 
     /**

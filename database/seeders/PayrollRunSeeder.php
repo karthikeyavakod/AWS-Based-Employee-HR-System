@@ -60,7 +60,27 @@ class PayrollRunSeeder extends Seeder
 
     public function run(): void
     {
-        foreach ($this->payrollRuns as $payrollRun) {
+        $payrollRuns = $this->payrollRuns;
+        $currentMonth = today();
+
+        if (! collect($payrollRuns)->contains(
+            fn (array $payrollRun): bool => $payrollRun['period_year'] === (int) $currentMonth->format('Y')
+                && $payrollRun['period_month'] === (int) $currentMonth->format('n')
+        )) {
+            $periodStart = $currentMonth->copy()->startOfMonth();
+            $periodEnd = $currentMonth->copy()->endOfMonth();
+            $payrollRuns[] = [
+                'title' => $currentMonth->format('F Y').' Payroll',
+                'period_year' => (int) $currentMonth->format('Y'),
+                'period_month' => (int) $currentMonth->format('n'),
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+                'status' => 'draft',
+                'payment_date' => null,
+            ];
+        }
+
+        foreach ($payrollRuns as $payrollRun) {
             DB::table('payroll_runs')->updateOrInsert(
                 ['period_year' => $payrollRun['period_year'], 'period_month' => $payrollRun['period_month']],
                 [

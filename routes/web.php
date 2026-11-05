@@ -2,17 +2,18 @@
 
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendanceCorrectionController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CompanyAnnouncementController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentManagerController;
 use App\Http\Controllers\Admin\DesignationController;
-use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\DashboardController;
@@ -280,9 +281,16 @@ Route::middleware('auth')
             ->middleware('permission:report.view')
             ->name('reports.payrolls');
 
-        Route::get('/audit-logs', [AuditLogController::class, 'index'])
-            ->middleware('permission:audit.log.view')
-            ->name('audit-logs.index');
+        Route::middleware('super-admin')->group(function () {
+            Route::get('/audit-logs/export/csv', [AuditLogController::class, 'exportCsv'])
+                ->name('audit-logs.export.csv');
+
+            Route::get('/audit-logs/export/pdf', [AuditLogController::class, 'exportPdf'])
+                ->name('audit-logs.export.pdf');
+
+            Route::get('/audit-logs', [AuditLogController::class, 'index'])
+                ->name('audit-logs.index');
+        });
 
         Route::get('/department-managers', [DepartmentManagerController::class, 'index'])
             ->middleware('permission:user.view')
@@ -331,4 +339,8 @@ Route::middleware('auth')
         Route::put('/attendance-corrections/{attendanceCorrection}', [AttendanceCorrectionController::class, 'update'])
             ->middleware('permission:attendance.view')
             ->name('attendance-corrections.update');
+
+        Route::get('/search', [SearchController::class, '__invoke'])
+            ->middleware('permission:employee.view')
+            ->name('search');
     });

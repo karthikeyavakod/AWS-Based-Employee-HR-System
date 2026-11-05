@@ -43,8 +43,12 @@
         </div>
 
         <div class="topbar-search flex-grow-1 d-none d-lg-block">
-            <i class="bi bi-search"></i>
-            <input type="search" class="form-control" placeholder="Search employees, reports, payroll..." aria-label="Search">
+            <form method="GET" action="{{ route('admin.search') }}" class="d-flex position-relative">
+                <button type="submit" class="position-absolute top-50 start-0 translate-middle-y border-0 bg-transparent p-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </button>
+                <input type="search" name="q" class="form-control ps-5" placeholder="Search employees, reports, payroll..." aria-label="Search" value="{{ request()->query('q', '') }}">
+            </form>
         </div>
 
         <div class="d-flex align-items-center gap-2 ms-auto">

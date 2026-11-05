@@ -119,7 +119,22 @@ class EmployeeService
             : Role::query()->whereKey($roleId)->where('slug', '!=', 'super-admin')->first();
 
         if ($role !== null) {
+            $oldRoles = $user->roles()->orderBy('slug')->pluck('slug')->all();
             $user->roles()->sync([$role->id]);
+            $newRoles = $user->roles()->orderBy('slug')->pluck('slug')->all();
+
+            if ($oldRoles !== $newRoles) {
+                app(AuditLogService::class)->log(
+                    'updated',
+                    'users',
+                    (int) $user->getKey(),
+                    'User',
+                    ['roles' => $oldRoles],
+                    ['roles' => $newRoles],
+                    'Roles updated for user',
+                    subjectName: $user->name,
+                );
+            }
         }
     }
 

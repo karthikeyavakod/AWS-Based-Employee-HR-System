@@ -36,7 +36,11 @@
 
         <ul class="nav nav-pills flex-column gap-1">
             @foreach ($menuItems as $item)
-                @if ($user?->hasPermission($item['permission']) && Illuminate\Support\Facades\Route::has($item['route']))
+                @if (
+                    $user?->hasPermission($item['permission'])
+                    && ($item['route'] !== 'admin.audit-logs.index' || $user?->isSuperAdmin())
+                    && Illuminate\Support\Facades\Route::has($item['route'])
+                )
                     <li class="nav-item">
                         <a
                             href="{{ route($item['route']) }}"
