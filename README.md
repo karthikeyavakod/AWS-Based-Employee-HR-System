@@ -79,37 +79,116 @@ The application uses a modular, layered Laravel methodology:
 
 This describes the implementation structure; it does not claim a particular team process such as Scrum or a specific release cadence.
 
-### Application flow diagram
+### Compact system diagrams
+
+These diagrams summarize the main system behavior; the database diagram is an overview, with the [full ERD](docs/database/erd.md) available separately.
+
+#### Data flow
 
 ```mermaid
-flowchart TD
-    Start([User opens the application]) --> Request[Browser sends HTTP request]
-    Request --> Route[Laravel web route matches request]
-    Route --> Login{Login request?}
+flowchart LR
+    U[Employee or HR user] -->|HTTP request| W[Browser / Blade UI]
+    W -->|Validate and authorize| L[Laravel routes and middleware]
+    L --> C[Controllers and HR services]
+    C <--> D[(SQLite or MySQL)]
+    C -. selected sensitive events .-> A[Audit log]
+    C -->|Page or feedback| W
+```
 
-    Login -- Yes --> Validate[Validate credentials and apply login throttling]
-    Validate --> Active{Credentials valid and account active?}
-    Active -- No --> LoginError[Return login error]
-    Active -- Yes --> Session[Regenerate authenticated session]
-    Session --> Protected
+#### Use cases
 
-    Login -- No --> Authenticated{Authenticated?}
-    Authenticated -- No --> LoginPage[Redirect to login]
-    Authenticated -- Yes --> Access{Password-change and permission checks pass?}
-    Access -- No --> Denied[Redirect or return access denied]
-    Access -- Yes --> ValidateInput[Validate submitted input when required]
-    ValidateInput --> Controller[Controller coordinates action]
-    Controller --> Service[Service applies HR business rules]
-    Service --> Model[Eloquent model reads or writes records]
-    Model <--> Database[(SQLite or MySQL)]
-    Model --> AuditCheck{Audit event needed?}
-    AuditCheck -- Yes --> Audit[Record selected sensitive activity]
-    Audit --> Render[Render Blade page or redirect with feedback]
-    AuditCheck -- No --> Render
-    Render --> Browser([Response returned to browser])
-    LoginError --> Browser
-    LoginPage --> Browser
-    Denied --> Browser
+```mermaid
+flowchart LR
+    E[Employee] --> P((View profile and announcements))
+    E --> T((Check in or out))
+    E --> L((Request leave))
+    D[Department Manager] --> R((Review leave and attendance))
+    H[HR Manager] --> R
+    H --> M((Manage employees and payroll))
+    S[Super Admin] --> A((Manage roles and permissions))
+    S --> M
+```
+
+#### UML class diagram
+
+```mermaid
+classDiagram
+    User "*" -- "*" Role
+    Role "*" -- "*" Permission
+    User "0..1" -- "0..1" Employee
+    Department "1" -- "*" Employee
+    Department "1" -- "*" Designation
+    Designation "1" -- "*" Employee
+    Employee "1" -- "*" Attendance
+    Employee "1" -- "*" LeaveRequest
+    LeaveType "1" -- "*" LeaveRequest
+    Employee "1" -- "*" LeaveBalance
+    Employee "1" -- "*" EmployeeSalaryStructure
+    SalaryComponent "1" -- "*" EmployeeSalaryStructure
+    PayrollRun "1" -- "*" Payslip
+    Employee "1" -- "*" Payslip
+    Payslip "1" -- "*" PayslipItem
+    SalaryComponent "1" -- "*" PayslipItem
+```
+
+#### Leave request sequence
+
+```mermaid
+sequenceDiagram
+    actor Employee
+    actor HR
+    participant App as Laravel app
+    participant Service as LeaveRequestService
+    participant DB as Database
+    Employee->>App: Submit leave request
+    App->>Service: Validate and create
+    Service->>DB: Save as pending
+    DB-->>Service: Saved request
+    Service-->>App: Pending request
+    App-->>Employee: Request confirmation
+    HR->>App: Approve request
+    App->>Service: Approve
+    Service->>DB: Update request and leave balance
+    DB-->>Service: Updated request and balance
+    Service-->>App: Approved request
+    App-->>HR: Approval confirmation
+```
+
+#### Collaboration diagram
+
+```mermaid
+flowchart LR
+    E[Employee] -->|1. Submit leave| UI[Browser]
+    UI -->|2. POST request| C[Leave controller]
+    C -->|3. Create / approve| S[Leave service]
+    S -->|4. Save request| DB[(Database)]
+    HR[HR / Manager] -->|5. Review| UI
+    UI -->|6. Approve| C
+    S -->|7. Update balance| DB
+    C -->|8. Show result| UI
+```
+
+#### Core database design
+
+```mermaid
+erDiagram
+    USERS }o--o{ ROLES : role_user
+    ROLES }o--o{ PERMISSIONS : permission_role
+    USERS o|--o| EMPLOYEES : profile
+    DEPARTMENTS ||--o{ EMPLOYEES : contains
+    DEPARTMENTS ||--o{ DESIGNATIONS : defines
+    DESIGNATIONS ||--o{ EMPLOYEES : assigns
+    EMPLOYEES ||--o{ ATTENDANCES : records
+    EMPLOYEES ||--o{ LEAVE_REQUESTS : submits
+    LEAVE_TYPES ||--o{ LEAVE_REQUESTS : classifies
+    EMPLOYEES ||--o{ LEAVE_BALANCES : owns
+    LEAVE_TYPES ||--o{ LEAVE_BALANCES : tracks
+    EMPLOYEES ||--o{ EMPLOYEE_SALARY_STRUCTURES : assigned
+    SALARY_COMPONENTS ||--o{ EMPLOYEE_SALARY_STRUCTURES : configures
+    PAYROLL_RUNS ||--o{ PAYSLIPS : generates
+    EMPLOYEES ||--o{ PAYSLIPS : receives
+    PAYSLIPS ||--o{ PAYSLIP_ITEMS : contains
+    SALARY_COMPONENTS ||--o{ PAYSLIP_ITEMS : itemizes
 ```
 
 ### Main source folders
@@ -146,23 +225,25 @@ The local demo seeder creates an administrator with `admin@example.com` / `Passw
 
 ### Windows with XAMPP and MySQL
 
-1. Start MySQL from the XAMPP Control Panel (Apache is only needed if you use phpMyAdmin through its web interface). Create a database named `hrms_laravel`.
+1. Start MySQL from the XAMPP Control Panel (Apache is only needed if you use phpMyAdmin through its web interface). In phpMyAdmin, create a database named `hrms_db` with the `utf8mb4_unicode_ci` collation.
 2. In PowerShell, from the project directory, create the environment file:
 
    ```powershell
    Copy-Item .env.example .env
    ```
 
-3. Edit `.env` and set `DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=hrms_laravel`, and the MySQL username/password for your local XAMPP installation. Keep `APP_ENV=local` and `APP_DEBUG=true` only on your development machine.
-4. Install dependencies, generate the local app key, create the schema and development seed data, and compile frontend assets:
+3. Edit `.env` and set `DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=hrms_db`, and the MySQL username/password for your local XAMPP installation (the default XAMPP account is often `root` with an empty password). Keep `APP_ENV=local` and `APP_DEBUG=true` only on your development machine.
+4. Install dependencies, generate the local app key, create the schema, and compile frontend assets. Only run the seeder for a new, empty database; if you are preserving imported SQLite records, run migrations without `--seed`:
 
    ```powershell
    composer install
    npm ci
    php artisan key:generate
-   php artisan migrate --seed
+   php artisan migrate
    npm run build
    ```
+
+   To create a fresh database with demo data instead, use `php artisan migrate --seed` in place of `php artisan migrate`. Do not seed a database that already contains imported records.
 
 5. Start the development server and open `http://127.0.0.1:8000`:
 
