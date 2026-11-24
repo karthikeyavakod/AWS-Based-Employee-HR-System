@@ -99,31 +99,17 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Start([Start]) --> Login[Open login page]
-    Login --> Credentials{Credentials valid and account active?}
-    Credentials -- No --> LoginError[Show login error]
-    LoginError --> Login
-    Credentials -- Yes --> Session[Start authenticated session]
-    Session --> Password{Password change required?}
-    Password -- Yes --> ChangePassword[Change password]
-    ChangePassword --> Permission
-    Password -- No --> Permission{Permission check passes?}
-    Permission -- No --> Denied[Show access denied]
-    Permission -- Yes --> Task[Choose HR or employee task]
-    Task --> Submit[Submit request or form]
+    Start([Start]) --> Login[Sign in]
+    Login --> Access{Active and authorized?}
+    Access -- No --> Denied[Show access error] --> End([End])
+    Access -- Yes --> Task[Choose HR or employee task]
+    Task --> Submit[Submit request]
     Submit --> Valid{Input valid?}
-    Valid -- No --> Errors[Show validation errors]
-    Errors --> Submit
-    Valid -- Yes --> Process[Controller and service process request]
-    Process --> Data[(Read or update HR database)]
-    Data --> Audit{Sensitive change?}
-    Audit -- Yes --> Log[Record audit event]
-    Audit -- No --> Result[Show page or feedback]
-    Log --> Result
-    Result --> Continue{Another task?}
-    Continue -- Yes --> Permission
-    Continue -- No --> End([End])
-    Denied --> End
+    Valid -- No --> Fix[Correct form] --> Submit
+    Valid -- Yes --> Save[Process and save data]
+    Save --> Audit[Log sensitive changes if needed]
+    Audit --> Result[Show result]
+    Result --> End
 ```
 
 #### Use cases
