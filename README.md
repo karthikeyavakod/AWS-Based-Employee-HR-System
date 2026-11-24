@@ -95,6 +95,37 @@ flowchart LR
     C -->|Page or feedback| W
 ```
 
+#### Activity diagram
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Login[Open login page]
+    Login --> Credentials{Credentials valid and account active?}
+    Credentials -- No --> LoginError[Show login error]
+    LoginError --> Login
+    Credentials -- Yes --> Session[Start authenticated session]
+    Session --> Password{Password change required?}
+    Password -- Yes --> ChangePassword[Change password]
+    ChangePassword --> Permission
+    Password -- No --> Permission{Permission check passes?}
+    Permission -- No --> Denied[Show access denied]
+    Permission -- Yes --> Task[Choose HR or employee task]
+    Task --> Submit[Submit request or form]
+    Submit --> Valid{Input valid?}
+    Valid -- No --> Errors[Show validation errors]
+    Errors --> Submit
+    Valid -- Yes --> Process[Controller and service process request]
+    Process --> Data[(Read or update HR database)]
+    Data --> Audit{Sensitive change?}
+    Audit -- Yes --> Log[Record audit event]
+    Audit -- No --> Result[Show page or feedback]
+    Log --> Result
+    Result --> Continue{Another task?}
+    Continue -- Yes --> Permission
+    Continue -- No --> End([End])
+    Denied --> End
+```
+
 #### Use cases
 
 ```mermaid
